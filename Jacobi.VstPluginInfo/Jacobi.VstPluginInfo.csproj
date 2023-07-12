@@ -12,6 +12,7 @@
     <Description>Retrieve VST2 and VST3 plugin info.</Description>
     <Copyright>Copyright © 2023 Jacobi Software</Copyright>
     <PackageReadmeFile>readme.md</PackageReadmeFile>
+    <PackageProjectUrl>https://github.com/obiwanjacobi/vst.net-plugininfo</PackageProjectUrl>
   </PropertyGroup>
 
   <PropertyGroup Condition="Exists('../../../../_keyfile/Jacobi.snk')">

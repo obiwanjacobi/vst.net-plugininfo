@@ -56,7 +56,7 @@ internal sealed class Vst3PluginModule : Module, IDisposable
         {
             return _classInfos
                 .Select(info => info.Name)
-                .FirstOrDefault(value => !String.IsNullOrEmpty(value)) 
+                .FirstOrDefault(value => !String.IsNullOrEmpty(value))
                 ?? String.Empty;
         }
     }
@@ -132,8 +132,11 @@ internal sealed class Vst3PluginModule : Module, IDisposable
             var initDll = ToDelegate<Vst3InitDll>(initDllProc);
             var exitDll = ToDelegate<Vst3ExitDll>(exitDllProc);
 
-            module = new Vst3PluginModule(pluginFactory, pluginFactory2, exitDll!);
-            return initDll!();
+            if (initDll!())
+            {
+                module = new Vst3PluginModule(pluginFactory, pluginFactory2, exitDll!);
+                return true;
+            }
         }
 
         module = null;
