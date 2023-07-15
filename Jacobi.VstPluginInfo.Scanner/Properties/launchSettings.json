@@ -1,0 +1,16 @@
+{
+  "profiles": {
+    "Jacobi.VstPluginInfo.Scanner": {
+      "commandName": "Project",
+      "commandLineArgs": "\"C:\\Program Files\\VSTPlugins\""
+    },
+    "VST2": {
+      "commandName": "Project",
+      "commandLineArgs": "\"C:\\Program Files\\VSTPlugins\\VST2\""
+    },
+    "VST3": {
+      "commandName": "Project",
+      "commandLineArgs": "\"C:\\Program Files\\VSTPlugins\\VST3\""
+    }
+  }
+}

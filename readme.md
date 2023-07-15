@@ -43,3 +43,13 @@ else
     // it is not a VST3 plugin!
 }
 ```
+
+## Plugin Scanner
+
+The plugin scanner is a command line tool that is started with a base path and will find all `.dll` and `.vst3` files recursively and attempt to load them and print a status line to the console. If the plugin could be loaded an extra line with some plugin data is printed.
+
+```cmd
+Jacobi.VstPluginInfo.Scanner "C:\Program Files\Vst Plugins"
+```
+
+> Use quotes for file paths that contain spaces.

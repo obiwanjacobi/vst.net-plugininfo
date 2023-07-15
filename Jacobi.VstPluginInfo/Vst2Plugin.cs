@@ -5,7 +5,7 @@ namespace Jacobi.VstPluginInfo;
 [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
 internal unsafe delegate Vst2Plugin* Vst2PluginMain(IntPtr hostCmdHandler);
 [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-internal unsafe delegate IntPtr Vst2HostCommand(Vst2Plugin* plugin, Int16 hostCommand, Int32 index, IntPtr value, IntPtr ptr, float opt);
+internal unsafe delegate IntPtr Vst2HostCommand(Vst2Plugin* plugin, Vst2HostCommands hostCommand, Int32 index, IntPtr value, IntPtr ptr, float opt);
 [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
 internal unsafe delegate IntPtr Vst2PluginCommand(Vst2Plugin* plugin, Vst2PluginCommands command, Int32 index, IntPtr value, IntPtr ptr, float opt);
 
@@ -74,7 +74,7 @@ public enum Vst2PluginFlags
 }
 
 
-internal enum Vst2PluginCommands
+internal enum Vst2PluginCommands : Int16
 {
     Open,
     Close,
@@ -156,4 +156,58 @@ internal enum Vst2PluginCommands
     SetProcessPrecision,
     MidiGetInputChannelCount,
     MidiGetOutputChannelCount,
-};
+}
+
+internal enum Vst2HostCommands : Int16
+{
+    Automate,
+    Version,
+    CurrentId,
+    Idle,
+    PinConnected,
+    Reserved1,
+    WantMidi,
+    GetTime,
+    ProcessEvents,
+    SetTime,
+    TempoAt,
+    GetAutomatableParameterCount,
+    GetParameterQuantization,
+    IoChanged,
+    NeedIdle,
+    SizeWindow,
+    GetSampleRate,
+    GetBlockSize,
+    GetInputLatency,
+    GetOutputLatency,
+    PluginGetPrevious,
+    PluginGetNext,
+    WillReplace,
+    GetCurrentProcessLevel,
+    GetAutomationState,
+    OfflineStart,
+    OfflineRead,
+    OfflineWrite,
+    OfflineGetCurrentPass,
+    OfflineGetCurrentMetaPass,
+    SetOutputSampleRate,
+    GetOutputSpeakerArrangement,
+    VendorGetString,
+    ProductGetString,
+    VendorGetVersion,
+    VendorSpecific,
+    SetIcon,
+    CanDo,
+    GetLanguage,
+    WindowOpen,
+    WindowClose,
+    GetDirectory,
+    UpdateDisplay,
+    EditBegin,
+    EditEnd,
+    FileSelectorOpen,
+    FileSelectorClose,
+    EditFile,
+    GetChunkFile,
+    GetInputSpeakerArrangement,
+}

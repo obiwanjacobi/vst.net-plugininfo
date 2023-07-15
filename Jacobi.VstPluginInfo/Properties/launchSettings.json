@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "Jacobi.VstPluginInfo": {
+      "commandName": "Project",
+      "commandLineArgs": "C:\\Program Files\\VSTPlugins"
+    }
+  }
+}

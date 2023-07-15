@@ -5,12 +5,14 @@ namespace Jacobi.VstPluginInfo;
 
 internal sealed class Vst3PluginModule : Module, IDisposable
 {
-    private readonly Vst3ExitDll _exitDll;
+    private readonly IntPtr _handle;
+    private readonly Vst3ExitDll? _exitDll;
     private readonly PFactoryInfo _factoryInfo;
     private readonly List<PClassInfo2> _classInfos = new();
 
-    private Vst3PluginModule(IPluginFactory pluginFactory, IPluginFactory2? pluginFactory2, Vst3ExitDll exitDll)
+    private Vst3PluginModule(IntPtr handle, IPluginFactory pluginFactory, IPluginFactory2? pluginFactory2, Vst3ExitDll? exitDll)
     {
+        _handle = handle;
         _exitDll = exitDll;
 
         _factoryInfo = new PFactoryInfo();
@@ -107,7 +109,9 @@ internal sealed class Vst3PluginModule : Module, IDisposable
 
     public void Dispose()
     {
-        _exitDll();
+        if (_exitDll is not null) _exitDll();
+        NativeMethods.FreeLibrary(_handle);
+        GC.SuppressFinalize(this);
     }
 
     public static bool TryLoadPlugin(string pluginPath, [NotNullWhen(true)] out Vst3PluginModule? module)
@@ -124,21 +128,34 @@ internal sealed class Vst3PluginModule : Module, IDisposable
             var exitDllProc = NativeMethods.GetProcAddress(hLib, "ExitDll");
 
             var getPluginFactory = ToDelegate<Vst3GetPluginFactory>(getPluginFactoryProc);
-
-            var unmPluginFactory = getPluginFactory!();
-            var pluginFactory = ToInterface<IPluginFactory>(unmPluginFactory);
-            var pluginFactory2 = ToInterface<IPluginFactory2>(unmPluginFactory);
-
-            var initDll = ToDelegate<Vst3InitDll>(initDllProc);
-            var exitDll = ToDelegate<Vst3ExitDll>(exitDllProc);
-
-            if (initDll!())
+            if (getPluginFactory is not null)
             {
-                module = new Vst3PluginModule(pluginFactory, pluginFactory2, exitDll!);
-                return true;
+                var initDll = ToDelegate<Vst3InitDll>(initDllProc);
+                var exitDll = ToDelegate<Vst3ExitDll>(exitDllProc);
+
+                if (initDll is null || initDll())
+                {
+                    var unmPluginFactory = getPluginFactory();
+                    var pluginFactory = ToInterface<IPluginFactory>(unmPluginFactory);
+                    var pluginFactory2 = ToInterface<IPluginFactory2>(unmPluginFactory);
+
+                    module = new Vst3PluginModule(hLib, pluginFactory, pluginFactory2, exitDll);
+                    return true;
+                }
+
+                NativeMethods.FreeLibrary(hLib);
+
+                throw new NotSupportedException(
+                    $"The VST3 plugin '{pluginPath}' loaded but failed to initialize (InitDll).");
             }
+
+            NativeMethods.FreeLibrary(hLib);
+
+            throw new NotSupportedException(
+                $"The VST3 plugin '{pluginPath}' loaded but failed to marshal the GetPluginFactory interface.");
         }
 
+        NativeMethods.FreeLibrary(hLib);
         module = null;
         return false;
     }

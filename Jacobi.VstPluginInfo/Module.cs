@@ -1,4 +1,5 @@
 ﻿using System.Runtime.InteropServices;
+using System.Text;
 
 namespace Jacobi.VstPluginInfo;
 
@@ -12,10 +13,14 @@ internal abstract class Module
         var hLib = NativeMethods.LoadLibrary(path);
         if (hLib == IntPtr.Zero)
         {
-            if (NativeMethods.GetLastError() == 193)    // bad file format
-                throw new BadImageFormatException("Could not load the plugin.");
+            var errTxt = GetLastErrorMessage();
+            errTxt = errTxt?.Replace("%1", path);
+            throw new ArgumentException(errTxt ?? "Could not load plugin.");
 
-            throw new ArgumentException("Could not load the plugin");
+            //if (Marshal.GetLastWin32Error() == 193)    // bad file format
+            //    throw new BadImageFormatException("Could not load the plugin because it is not 64-bit.");
+
+            //throw new ArgumentException("Could not load the plugin");
         }
 
         return hLib;
@@ -41,5 +46,19 @@ internal abstract class Module
     protected static T ToInterface<T>(nint ptr)
     {
         return (T)Marshal.GetTypedObjectForIUnknown(ptr, typeof(T));
+    }
+
+    protected static string? GetLastErrorMessage()
+    {
+        var lastError = Marshal.GetLastWin32Error();
+        if (lastError == 0)
+            return null;
+
+        var msgOut = new StringBuilder(256);
+        int size = NativeMethods.FormatMessage(
+            NativeMethods.FORMAT_MESSAGE.ALLOCATE_BUFFER | NativeMethods.FORMAT_MESSAGE.FROM_SYSTEM | NativeMethods.FORMAT_MESSAGE.IGNORE_INSERTS,
+            IntPtr.Zero, lastError, 0, out msgOut, msgOut.Capacity, IntPtr.Zero);
+
+        return msgOut.ToString().Trim();
     }
 }

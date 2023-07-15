@@ -4,12 +4,14 @@ namespace Jacobi.VstPluginInfo;
 
 internal unsafe sealed class Vst2PluginModule : Module, IDisposable
 {
+    private readonly IntPtr _handle;
     private readonly Vst2Plugin* _plugin;
     private readonly Vst2PluginCommand _command;
     private readonly UnmanagedBuffer _buffer;
 
-    private Vst2PluginModule(Vst2Plugin* plugin, Vst2PluginCommand command)
+    private Vst2PluginModule(IntPtr handle, Vst2Plugin* plugin, Vst2PluginCommand command)
     {
+        _handle = handle;
         _plugin = plugin;
         _command = command;
         _buffer = new UnmanagedBuffer(256);
@@ -73,6 +75,7 @@ internal unsafe sealed class Vst2PluginModule : Module, IDisposable
     {
         Close();
         _buffer.Dispose();
+        NativeMethods.FreeLibrary(_handle);
         GC.SuppressFinalize(this);
     }
 
@@ -88,21 +91,37 @@ internal unsafe sealed class Vst2PluginModule : Module, IDisposable
         {
             var pHost = ToPointer<Vst2HostCommand>(Vst2HostCommand);
             var proc = ToDelegate<Vst2PluginMain>(procAddress);
-            
-            var vstPlugin = proc!(pHost);
-            var pluginCmd = ToDelegate<Vst2PluginCommand>(vstPlugin->command);
 
-            module = new Vst2PluginModule(vstPlugin, pluginCmd!);
-            return true;
+            var vstPlugin = proc!(pHost);
+            if (vstPlugin is not null)
+            {
+                var pluginCmd = ToDelegate<Vst2PluginCommand>(vstPlugin->command);
+
+                module = new Vst2PluginModule(hLib, vstPlugin, pluginCmd!);
+                return true;
+            }
+
+            NativeMethods.FreeLibrary(hLib);
+
+            throw new NotSupportedException(
+                $"The VST2 plugin '{pluginPath}' loaded but failed to initialize, which can be due to this not implementing a full VST host.");
         }
 
+        NativeMethods.FreeLibrary(hLib);
         module = null;
         return false;
     }
 
-    private static IntPtr Vst2HostCommand(Vst2Plugin* plugin, Int16 hostCommand, Int32 index, IntPtr value, IntPtr ptr, float opt)
+    private static IntPtr Vst2HostCommand(Vst2Plugin* plugin, Vst2HostCommands hostCommand, Int32 index, IntPtr value, IntPtr ptr, float opt)
     {
-        // not used
-        return IntPtr.Zero;
+        switch (hostCommand)
+        {
+            // some plugins check the version of the host.
+            case Vst2HostCommands.Version:
+                return new IntPtr(2400);
+
+            default:
+                return IntPtr.Zero;
+        }
     }
 }
